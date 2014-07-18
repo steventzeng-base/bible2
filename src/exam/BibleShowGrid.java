@@ -78,9 +78,9 @@ public class BibleShowGrid extends GridPane {
         this.setStyle("-fx-font:20pt monospace");
         this.getColumnConstraints().addAll(columnConstraints, columnConstraints);
         this.getRowConstraints().addAll(commonRowConstraints, commonRowConstraints, commonRowConstraints, contentRowConstraints, commonRowConstraints, commonRowConstraints);
-        this.setHgap(10);
-        this.setVgap(10);
-        this.setPadding(new Insets(10));
+        this.setHgap(5);
+        this.setVgap(5);
+        this.setPadding(new Insets(5));
         title = new Text("title");
         hymnal = new Text("hymnal");
         speaker = new Text("speaker");
@@ -103,6 +103,7 @@ public class BibleShowGrid extends GridPane {
             {
                 setSpacing(10);
                 setPrefHeight(10);
+                setStyle("-fx-font:12pt monospace");
             }
         }, 0, 4, 2, 1);
         canon = new ComboBox<>();
@@ -113,12 +114,7 @@ public class BibleShowGrid extends GridPane {
                 @Override
                 protected void updateItem(Canon item, boolean empty) {
                     super.updateItem(item, empty);
-
-                    if (Objects.nonNull(item)) {
-                        setText(item.getName());
-                    } else {
-                        setText(null);
-                    }
+                    setText(Optional.ofNullable(item).map(Canon::getName).orElse(""));
                 }
             };
         });
@@ -144,12 +140,7 @@ public class BibleShowGrid extends GridPane {
                 @Override
                 protected void updateItem(Chapter item, boolean empty) {
                     super.updateItem(item, empty);
-
-                    if (Objects.nonNull(item)) {
-                        setText(String.valueOf(item.getNum()));
-                    } else {
-                        setText(null);
-                    }
+                    setText(Optional.ofNullable(item).map(Chapter::getNum).map(String::valueOf).orElse(""));
                 }
             };
         });
@@ -177,12 +168,7 @@ public class BibleShowGrid extends GridPane {
                 @Override
                 protected void updateItem(Verse item, boolean empty) {
                     super.updateItem(item, empty);
-
-                    if (Objects.nonNull(item)) {
-                        setText(String.valueOf(item.getNum()));
-                    } else {
-                        setText(null);
-                    }
+                    setText(Optional.ofNullable(item).map(Verse::getNum).map(String::valueOf).orElse(""));
                 }
             };
         });
@@ -206,12 +192,9 @@ public class BibleShowGrid extends GridPane {
             {
                 setSpacing(10);
                 setAlignment(Pos.BOTTOM_LEFT);
+                setStyle("-fx-font:12pt monospace");
             }
         }, 0, 5, 2, 1);
-//        final Scene scene = new Scene(grid, 1024, 768);
-//        this.prefHeightProperty().bind(scene.heightProperty());
-//        this.prefWidthProperty().bind(scene.widthProperty());
-//        stage.setScene(scene);
     }
 
     protected void binding() {

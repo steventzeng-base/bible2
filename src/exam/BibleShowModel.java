@@ -13,6 +13,7 @@ import exam.model.Verse;
 import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -86,7 +87,10 @@ public class BibleShowModel {
     }
 
     public void updateVerse() {
-        contentProperty.set(contentProperty.getValueSafe() + verse.getValue().getText());
+        if (Objects.isNull(verse)) {
+            return;
+        }
+        contentProperty.set(contentProperty.getValueSafe()+"\n" + verse.getValue().getText());
         verseDescription.setValue(verse.get().getFullVerse());
     }
 
