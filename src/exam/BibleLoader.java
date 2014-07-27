@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package exam;
 
 import exam.model.Canon;
@@ -14,12 +9,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 
 /**
@@ -27,6 +22,8 @@ import javax.annotation.PostConstruct;
  * @author steven
  */
 public class BibleLoader {
+
+    private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
     private final List<Canon> canos = new ArrayList<>();
 
@@ -39,18 +36,11 @@ public class BibleLoader {
     @PostConstruct
     public void init() {
         final long start = System.nanoTime();
-        try (final Stream<String> lines = new BufferedReader(new InputStreamReader(BibleLoader.class.getResourceAsStream("/holy_bible.txt"), StandardCharsets.UTF_8)).lines().onClose(() -> {
-            logger.info("file is close");
-        })) {
-            lines.forEach((line) -> {
-                parseLine(line);
-            });
-        }
-        
+        final InputStreamReader reader = new InputStreamReader(BibleLoader.class.getResourceAsStream("/holy_bible.txt"), StandardCharsets.UTF_8);
+        new BufferedReader(reader).lines().onClose(() -> logger.info("file is close")).forEach(this::parseLine);
         logger.log(Level.INFO, "total load time = {0}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
     }
 
-    private final static Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
     protected void parseLine(final String line) {
         final Scanner scanner = new Scanner(line).useDelimiter(delimiter);
@@ -64,9 +54,12 @@ public class BibleLoader {
     }
 
     private void buildBibileData(String canonName, String canonShortName, int chapterNum, int verseNum, int pageNum, String text) {
-        curCanon = curCanon != null && canonShortName.equals(curCanon.getShortName()) ? curCanon : newCanon(canonName, canonShortName);
-        curChapter = !curCanon.getChapters().isEmpty() && curChapter.getNum() == chapterNum ? curChapter : newChapter(chapterNum);
+        curCanon = Optional.ofNullable(curCanon).filter(c -> c.getShortName().equals(canonShortName))
+                .orElseGet(() -> newCanon(canonName, canonShortName));
+        curChapter = Optional.ofNullable(curChapter).filter(ch -> ch.getNum() == chapterNum)
+                .orElseGet(() -> newChapter(chapterNum));
         curChapter.getVerses().add(new Verse(curChapter, verseNum, text, pageNum));
+
     }
 
     private Canon newCanon(final String canonName, final String canonShortName) {

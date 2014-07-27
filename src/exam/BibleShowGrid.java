@@ -3,7 +3,6 @@ package exam;
 import exam.model.Canon;
 import exam.model.Chapter;
 import exam.model.Verse;
-import java.util.Objects;
 import java.util.Optional;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
@@ -75,7 +74,7 @@ public class BibleShowGrid extends GridPane {
                 setVgrow(Priority.ALWAYS);
             }
         };
-        this.setStyle("-fx-font:20pt monospace");
+        this.setStyle("-fx-font:20pt monospace; -fx-font-smoothing-type:lcd;");
         this.getColumnConstraints().addAll(columnConstraints, columnConstraints);
         this.getRowConstraints().addAll(commonRowConstraints, commonRowConstraints, commonRowConstraints, contentRowConstraints, commonRowConstraints, commonRowConstraints);
         this.setHgap(5);
@@ -103,12 +102,12 @@ public class BibleShowGrid extends GridPane {
             {
                 setSpacing(10);
                 setPrefHeight(10);
-                setStyle("-fx-font:12pt monospace");
+                setStyle("-fx-font:12pt monospace; -fx-font-smoothing-type:lcd;");
             }
         }, 0, 4, 2, 1);
         canon = new ComboBox<>();
         canon.getItems().addAll(model.getBible().getAllCanons());
-        canon.setCellFactory((param) -> {
+        canon.setCellFactory(param -> {
             return new ListCell<Canon>() {
 
                 @Override
@@ -133,7 +132,7 @@ public class BibleShowGrid extends GridPane {
 
         chapter = new ComboBox<>();
         chapter.setPrefWidth(Region.USE_COMPUTED_SIZE);
-        chapter.setCellFactory((param) -> {
+        chapter.setCellFactory(param -> {
 
             return new ListCell<Chapter>() {
 
@@ -161,7 +160,7 @@ public class BibleShowGrid extends GridPane {
         verse = new ComboBox<>();
         verse.setPrefWidth(Region.USE_COMPUTED_SIZE);
 
-        verse.setCellFactory((param) -> {
+        verse.setCellFactory(param -> {
 
             return new ListCell<Verse>() {
 
