@@ -3,7 +3,10 @@ package exam;
 import exam.model.Canon;
 import exam.model.Chapter;
 import exam.model.Verse;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -45,6 +48,8 @@ public class BibleShowGrid extends GridPane {
 
     private Button goButton;
 
+    private Button nextVerseButton;
+
     private Button saveButton;
 
     private Text verseShow;
@@ -74,7 +79,7 @@ public class BibleShowGrid extends GridPane {
                 setVgrow(Priority.ALWAYS);
             }
         };
-        this.setStyle("-fx-font:20pt monospace; -fx-font-smoothing-type:lcd;");
+        this.setStyle("-fx-font:20px monospace; -fx-font-smoothing-type:lcd;");
         this.getColumnConstraints().addAll(columnConstraints, columnConstraints);
         this.getRowConstraints().addAll(commonRowConstraints, commonRowConstraints, commonRowConstraints, contentRowConstraints, commonRowConstraints, commonRowConstraints);
         this.setHgap(5);
@@ -102,98 +107,110 @@ public class BibleShowGrid extends GridPane {
             {
                 setSpacing(10);
                 setPrefHeight(10);
-                setStyle("-fx-font:12pt monospace; -fx-font-smoothing-type:lcd;");
+                setStyle("-fx-font:12px monospace; -fx-font-smoothing-type:lcd;");
             }
         }, 0, 4, 2, 1);
-        canon = new ComboBox<>();
-        canon.getItems().addAll(model.getBible().getAllCanons());
-        canon.setCellFactory(param -> {
-            return new ListCell<Canon>() {
+        canon = new ComboBox<Canon>() {
+            {
+                setPromptText("經卷");
+                getItems().addAll(model.getBible().getAllCanons());
+                setCellFactory(param -> {
+                    return new ListCell<Canon>() {
 
-                @Override
-                protected void updateItem(Canon item, boolean empty) {
-                    super.updateItem(item, empty);
-                    setText(Optional.ofNullable(item).map(Canon::getName).orElse(""));
-                }
-            };
-        });
-        canon.setConverter(new StringConverter<Canon>() {
+                        @Override
+                        protected void updateItem(Canon item, boolean empty) {
+                            super.updateItem(item, empty);
+                            setText(Optional.ofNullable(item).map(Canon::getName).orElse(""));
+                        }
+                    };
+                });
+                setConverter(new StringConverter<Canon>() {
 
-            @Override
-            public String toString(Canon canon) {
-                return canon.getName();
+                    @Override
+                    public String toString(Canon canon) {
+                        return canon.getName();
+                    }
+
+                    @Override
+                    public Canon fromString(String name) {
+                        return model.getBible().getByName(name);
+                    }
+                });
             }
+        };
 
-            @Override
-            public Canon fromString(String name) {
-                return model.getBible().getByName(name);
+        chapter = new ComboBox<Chapter>() {
+            {
+                setPromptText("章/篇");
+                setPrefWidth(Region.USE_COMPUTED_SIZE);
+                setCellFactory(param -> {
+                    return new ListCell<Chapter>() {
+
+                        @Override
+                        protected void updateItem(Chapter item, boolean empty) {
+                            super.updateItem(item, empty);
+                            setText(leafNodeStringValue(Chapter::getNum, item));
+                        }
+                    };
+                });
+                setConverter(new StringConverter<Chapter>() {
+
+                    @Override
+                    public String toString(Chapter chapter) {
+                        return String.valueOf(chapter.getNum());
+                    }
+
+                    @Override
+                    public Chapter fromString(String value) {
+                        return canon.getValue().getChapters().get(Integer.parseInt(value) - 1);
+                    }
+                });
             }
-        });
+        };
 
-        chapter = new ComboBox<>();
-        chapter.setPrefWidth(Region.USE_COMPUTED_SIZE);
-        chapter.setCellFactory(param -> {
+        verse = new ComboBox<Verse>() {
+            {
+                setPrefWidth(Region.USE_COMPUTED_SIZE);
+                setPromptText("節");
+                setCellFactory(param -> {
 
-            return new ListCell<Chapter>() {
+                    return new ListCell<Verse>() {
+                        @Override
+                        protected void updateItem(Verse item, boolean empty) {
+                            super.updateItem(item, empty);
+                            setText(leafNodeStringValue(Verse::getNum, item));
+                        }
+                    };
+                });
+                setConverter(new StringConverter<Verse>() {
 
-                @Override
-                protected void updateItem(Chapter item, boolean empty) {
-                    super.updateItem(item, empty);
-                    setText(Optional.ofNullable(item).map(Chapter::getNum).map(String::valueOf).orElse(""));
-                }
-            };
-        });
+                    @Override
+                    public String toString(Verse verse) {
+                        return String.valueOf(verse.getNum());
+                    }
 
-        chapter.setConverter(new StringConverter<Chapter>() {
-
-            @Override
-            public String toString(Chapter chapter) {
-                return String.valueOf(chapter.getNum());
+                    @Override
+                    public Verse fromString(String value) {
+                        return chapter.getValue().getVerses().get(Integer.parseInt(value) - 1);
+                    }
+                });
             }
-
-            @Override
-            public Chapter fromString(String value) {
-                return canon.getValue().getChapters().get(Integer.parseInt(value) - 1);
-            }
-        });
-
-        verse = new ComboBox<>();
-        verse.setPrefWidth(Region.USE_COMPUTED_SIZE);
-
-        verse.setCellFactory(param -> {
-
-            return new ListCell<Verse>() {
-
-                @Override
-                protected void updateItem(Verse item, boolean empty) {
-                    super.updateItem(item, empty);
-                    setText(Optional.ofNullable(item).map(Verse::getNum).map(String::valueOf).orElse(""));
-                }
-            };
-        });
-
-        verse.setConverter(new StringConverter<Verse>() {
-
-            @Override
-            public String toString(Verse verse) {
-                return String.valueOf(verse.getNum());
-            }
-
-            @Override
-            public Verse fromString(String value) {
-                return chapter.getValue().getVerses().get(Integer.parseInt(value) - 1);
-            }
-        });
+        };
 
         goButton = new Button("顯示");
+        nextVerseButton = new Button("下一節");
         saveButton = new Button("存成 Word");
-        this.add(new HBox(canon, chapter, new Text("章"), verse, new Text("節"), goButton, saveButton) {
+        this.add(new HBox(canon, chapter, verse, goButton, nextVerseButton, saveButton) {
             {
                 setSpacing(10);
                 setAlignment(Pos.BOTTOM_LEFT);
                 setStyle("-fx-font:12pt monospace");
             }
         }, 0, 5, 2, 1);
+    }
+
+    <F, T> String leafNodeStringValue(Function<F, T> fun, F input) {
+        return Optional.ofNullable(input).map(fun).map(Objects::toString).orElse("");
     }
 
     protected void binding() {
@@ -208,25 +225,31 @@ public class BibleShowGrid extends GridPane {
         model.hymnalProperty().bind(hymnalField.textProperty());
         content.textProperty().bindBidirectional(model.contentProperty());
         verseShow.textProperty().bind(model.verseDescriptionProperty());
+        nextVerseButton.disableProperty().bind(verse.valueProperty().isNull());
+        verse.itemsProperty();
         canon.valueProperty().addListener((ObservableValue<? extends Canon> observable, Canon oldValue, Canon newValue) -> {
             chapter.setValue(null);
-            verse.setValue(null);
             chapter.getItems().clear();
-            verse.getItems().clear();
-            chapter.getItems().addAll(canon.getValue().getChapters());
+            chapter.getItems().addAll(newValue.getChapters());
         });
-        chapter.valueProperty().addListener((ObservableValue<? extends Chapter> ov, Chapter oldValue, Chapter newValue) -> {
+        chapter.valueProperty().addListener((ov, oldValue, newValue) -> {
             verse.setValue(null);
             verse.getItems().clear();
-            Optional.ofNullable(chapter.getValue()).ifPresent((selectChapter) -> {
-                verse.getItems().addAll(selectChapter.getVerses());
-            });
+            Optional.ofNullable(newValue).map(Chapter::getVerses).ifPresent(verse.getItems()::addAll);
         });
-        goButton.setOnAction((event) -> {
+        goButton.setOnAction(event -> {
             model.updateVerse();
             content.setScrollTop(Double.MAX_VALUE);
         });
-        saveButton.setOnAction((event) -> {
+        nextVerseButton.setOnAction(event -> {
+            final int nextIndex;
+            if ((nextIndex = verse.getItems().indexOf(verse.getValue()) + 1) < verse.getItems().size()) {
+                verse.setValue(verse.getItems().get(nextIndex));
+                model.updateVerse();
+                content.setScrollTop(Double.MAX_VALUE);
+            }
+        });
+        saveButton.setOnAction(event -> {
             model.saveFile(this.getScene().getWindow(), fileChooser);
         });
     }

@@ -29,7 +29,7 @@ public class Bible {
     }
 
     public Optional<Canon> getCanon(String canonShortName) {
-        return loader.getBible().stream().filter((canon) -> Objects.equals(canon.getShortName(), canonShortName)).findFirst();
+        return loader.getBible().stream().filter(canon -> Objects.equals(canon.getShortName(), canonShortName)).findFirst();
     }
 
     public Canon getCanon(int index) {
