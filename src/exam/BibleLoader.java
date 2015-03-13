@@ -41,7 +41,6 @@ public class BibleLoader {
         logger.log(Level.INFO, "total load time = {0}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
     }
 
-
     protected void parseLine(final String line) {
         final Scanner scanner = new Scanner(line).useDelimiter(delimiter);
         String canonName = scanner.next();

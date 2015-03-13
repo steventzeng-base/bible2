@@ -5,9 +5,14 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory.ListSpinnerValueFactory;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -23,12 +28,19 @@ public class HymnPanel extends VBox {
 
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
+
+    private Spinner<String> p2;
+
+    private ComboBox<String> p1;
+
+
+    private TextArea textArea;
+
     public HymnPanel() {
         render();
     }
 
     private void render() {
-
         setPrefHeight(USE_COMPUTED_SIZE);
         Text title = new Text();
         title.setStyle("-fx-font:40pt monospace; -fx-font-smoothing-type: lcd; -fx-font-family:'Source Han Sans Heavy';");
@@ -38,22 +50,21 @@ public class HymnPanel extends VBox {
         textArea.setStyle("-fx-font:40pt monospace; -fx-font-smoothing-type:lcd; -fx-background-color: black;");
         textArea.setText(" ");
         VBox.setVgrow(textArea, Priority.ALWAYS);
-        p1 = new TextField() {
+        final HymnLoader hymnLoader = new HymnLoader();
+        hymnLoader.init();
+        p1 = new ComboBox<String>(){
             {
+                getItems().addAll(hymnLoader.getHymns());
                 setPromptText("詩");
             }
         };
-        p1.textProperty().addListener((ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
-            p2.setText("");
+        p1.valueProperty().addListener((ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
+            p2.setValueFactory(new ListSpinnerValueFactory<>(FXCollections.observableArrayList(IntStream.rangeClosed(1, hymnLoader.getCount(newValue)).mapToObj(Objects::toString).collect(Collectors.toList()))));
         });
-        p2 = new TextField() {
-            {
-                setPromptText("節");
-            }
-        };
-        p2.textProperty().addListener((ObservableValue<? extends Object> observable, Object oldValue, Object newValue) -> {
-            title.setText(String.format("詩 %s 首", p1.getText()));
-            if (Objects.nonNull(p2.getText()) && !p2.getText().isEmpty() && !Objects.isNull(p1.getText()) && !p1.getText().isEmpty()) {
+        p2 = new Spinner<>();
+        p2.valueProperty().addListener((ObservableValue<? extends Object> observable, Object oldValue, Object newValue) -> {
+            title.setText(String.format("詩 %s 首", p1.getValue()));
+            if (Objects.nonNull(p2.getValue()) && !p2.getValue().isEmpty() && !Objects.isNull(p1.getValue()) && !p1.getValue().isEmpty()) {
                 loadHymn();
             }
         });
@@ -62,12 +73,8 @@ public class HymnPanel extends VBox {
         this.getChildren().addAll(title, textArea, controlBar);
     }
 
-    private TextField p2;
-
-    private TextField p1;
-
     private void loadHymn() {
-        final String url = String.format("/hymn/H%s-%s.txt", p1.getText(), p2.getText());
+        final String url = String.format("/hymn/H%s-%s.txt", p1.getValue(), p2.getValue());
         try {
             final String hymn = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream(url), StandardCharsets.UTF_8)).lines().collect(joining());
             textArea.setText(hymn);
@@ -75,6 +82,4 @@ public class HymnPanel extends VBox {
             logger.warning(e.getMessage());
         }
     }
-
-    private TextArea textArea;
 }
