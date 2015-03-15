@@ -6,7 +6,6 @@ import exam.model.Verse;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -22,9 +21,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.RowConstraints;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
+import javax.swing.text.StyleConstants;
 
 /**
  *
@@ -51,6 +52,10 @@ public class BibleShowGrid extends GridPane {
     private Button nextVerseButton;
 
     private Button saveButton;
+
+    private Button biggerFont;
+
+    private Button smallerFont;
 
     private Text verseShow;
 
@@ -103,7 +108,10 @@ public class BibleShowGrid extends GridPane {
         speakerField.setPromptText("主領人");
         hymnalField = new TextField();
         hymnalField.setPromptText("曲目");
-        this.add(new HBox(titleField, speakerField, hymnalField) {
+        biggerFont = new Button("字大");
+        smallerFont = new Button("字小");
+
+        this.add(new HBox(titleField, speakerField, hymnalField, biggerFont, smallerFont) {
             {
                 setSpacing(10);
                 setPrefHeight(10);
@@ -251,6 +259,14 @@ public class BibleShowGrid extends GridPane {
         });
         saveButton.setOnAction(event -> {
             model.saveFile(this.getScene().getWindow(), fileChooser);
+        });
+        biggerFont.setOnAction(event -> {
+            final Font font = content.getFont();
+            content.setStyle(String.format("-fx-font-size:%d", Math.min(((int) font.getSize() + 5), 80)));
+        });
+        smallerFont.setOnAction(event -> {
+            final Font font = content.getFont();
+            content.setStyle(String.format("-fx-font-size:%d", Math.max(((int) font.getSize() - 5), 20)));
         });
     }
 }
