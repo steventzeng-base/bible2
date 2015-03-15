@@ -5,10 +5,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory.ListSpinnerValueFactory;
@@ -59,7 +59,8 @@ public class HymnPanel extends VBox {
             }
         };
         p1.valueProperty().addListener((ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
-            p2.setValueFactory(new ListSpinnerValueFactory<>(FXCollections.observableArrayList(IntStream.rangeClosed(1, hymnLoader.getCount(newValue)).mapToObj(Objects::toString).collect(Collectors.toList()))));
+            final ObservableList<String> spinList = FXCollections.observableArrayList(IntStream.rangeClosed(1, hymnLoader.getCount(newValue)).mapToObj(Objects::toString).collect(toList()));
+            p2.setValueFactory(new ListSpinnerValueFactory<>(spinList));
         });
         p2 = new Spinner<>();
         p2.valueProperty().addListener((ObservableValue<? extends Object> observable, Object oldValue, Object newValue) -> {
