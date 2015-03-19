@@ -25,7 +25,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
-import javax.swing.text.StyleConstants;
 
 /**
  *
@@ -233,6 +232,7 @@ public class BibleShowGrid extends GridPane {
         model.hymnalProperty().bind(hymnalField.textProperty());
         content.textProperty().bindBidirectional(model.contentProperty());
         verseShow.textProperty().bind(model.verseDescriptionProperty());
+        goButton.disableProperty().bind(verse.valueProperty().isNull());
         nextVerseButton.disableProperty().bind(verse.valueProperty().isNull());
         verse.itemsProperty();
         canon.valueProperty().addListener((ObservableValue<? extends Canon> observable, Canon oldValue, Canon newValue) -> {
