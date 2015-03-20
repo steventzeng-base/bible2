@@ -3,11 +3,9 @@ package exam;
 import exam.model.Canon;
 import exam.model.Chapter;
 import exam.model.Verse;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -48,7 +46,7 @@ public class BibleShowGrid extends GridPane {
 
     private ComboBox<Canon> canon;
 
-    private ComboBox<Chapter> chapter;
+    private Spinner<Chapter> chapter;
 
     private Spinner<Verse> verse;
 
@@ -64,7 +62,7 @@ public class BibleShowGrid extends GridPane {
 
     private Text verseShow;
 
-    final ObservableList<Verse> chapters = FXCollections.observableArrayList();
+    final ObservableList<Chapter> chapters = FXCollections.observableArrayList();
 
     final ObservableList<Verse> verses = FXCollections.observableArrayList();
 
@@ -141,56 +139,20 @@ public class BibleShowGrid extends GridPane {
                         }
                     };
                 });
-                setConverter(new StringConverter<Canon>() {
-
-                    @Override
-                    public String toString(Canon canon) {
-                        return canon.getName();
-                    }
-
-                    @Override
-                    public Canon fromString(String name) {
-                        return model.getBible().getByName(name);
-                    }
-                });
+                setConverter(createStringConverter(Canon::getName));
             }
         };
 
-        chapter = new ComboBox<Chapter>() {
-            {
-                setPromptText("章/篇");
-                setPrefWidth(Region.USE_COMPUTED_SIZE);
-                setCellFactory(param -> {
-                    return new ListCell<Chapter>() {
+        chapter = new Spinner<>(createSpinnerFactory(chapters, Chapter::getNum));
+        chapter.setPrefWidth(USE_COMPUTED_SIZE);
 
-                        @Override
-                        protected void updateItem(Chapter item, boolean empty) {
-                            super.updateItem(item, empty);
-                            setText(leafNodeStringValue(Chapter::getNum, item));
-                        }
-                    };
-                });
-                setConverter(new StringConverter<Chapter>() {
-
-                    @Override
-                    public String toString(Chapter chapter) {
-                        return String.valueOf(chapter.getNum());
-                    }
-
-                    @Override
-                    public Chapter fromString(String value) {
-                        return canon.getValue().getChapters().get(Integer.parseInt(value) - 1);
-                    }
-                });
-            }
-        };
         verse = new Spinner<>(createSpinnerFactory(verses, Verse::getNum));
-        verse.setPrefWidth(Region.USE_COMPUTED_SIZE);
+        verse.setPrefWidth(USE_COMPUTED_SIZE);
 
         goButton = new Button("顯示");
         nextVerseButton = new Button("下一節");
         saveButton = new Button("存成 Word");
-        this.add(new HBox(canon, chapter, new Text("節"), verse, goButton, nextVerseButton, saveButton) {
+        this.add(new HBox(canon, chapter, new Text("章"), verse, new Text("節"), goButton, nextVerseButton, saveButton) {
             {
                 setSpacing(10);
                 setAlignment(Pos.BASELINE_LEFT);
@@ -199,13 +161,18 @@ public class BibleShowGrid extends GridPane {
         }, 0, 5, 2, 1);
     }
 
-    private <T, L> SpinnerValueFactory.ListSpinnerValueFactory<T> createSpinnerFactory(ObservableList<T> observableList, Function<T,L> labelFunction) {
+    private <T> SpinnerValueFactory.ListSpinnerValueFactory<T> createSpinnerFactory(ObservableList<T> observableList, Function<T, Object> showLabelFuntion) {
         SpinnerValueFactory.ListSpinnerValueFactory<T> valueFactory = new SpinnerValueFactory.ListSpinnerValueFactory<>(observableList);
+        valueFactory.setConverter(createStringConverter(showLabelFuntion));
+        return valueFactory;
+    }
+    
+    private <T> StringConverter<T> createStringConverter(Function<T, Object> showLabelFuntion){
         StringConverter<T> converter = new StringConverter<T>() {
 
             @Override
             public String toString(T input) {
-                return leafNodeStringValue(labelFunction, input);
+                return Optional.ofNullable(input).map(showLabelFuntion).map(Objects::toString).orElse("");
             }
 
             @Override
@@ -213,12 +180,7 @@ public class BibleShowGrid extends GridPane {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
         };
-        valueFactory.setConverter(converter);
-        return valueFactory;
-    }
-
-    <F, T> String leafNodeStringValue(Function<F, T> fun, F input) {
-        return Optional.ofNullable(input).map(fun).map(Objects::toString).orElse("");
+        return converter;
     }
 
     protected void binding() {
@@ -235,28 +197,31 @@ public class BibleShowGrid extends GridPane {
         verseShow.textProperty().bind(model.verseDescriptionProperty());
         goButton.disableProperty().bind(verse.valueProperty().isNull());
         nextVerseButton.disableProperty().bind(verse.valueProperty().isNull());
-        canon.valueProperty().addListener((ObservableValue<? extends Canon> observable, Canon oldValue, Canon newValue) -> {
-            chapter.setValue(null);
-            chapter.getItems().clear();
-            chapter.getItems().addAll(newValue.getChapters());
+        canon.valueProperty().addListener((observable, oldValue, newValue) -> {
+            chapters.clear();
+            if (Objects.nonNull(newValue)) {
+                chapters.addAll(newValue.getChapters());
+            }
         });
-        chapter.valueProperty().addListener((ov, oldValue, newValue) -> {
+        chapter.valueProperty().addListener((observable, oldValue, newValue) -> {
             verses.clear();
             if (Objects.nonNull(newValue)) {
                 verses.addAll(newValue.getVerses());
             }
         });
+        chapter.setOnScroll(this::mouseWheelHandler);
         verse.setOnScroll(this::mouseWheelHandler);
         goButton.setOnAction(event -> {
             model.updateVerse();
             content.setScrollTop(Double.MAX_VALUE);
         });
         nextVerseButton.setOnAction(event -> {
-            final List<Verse> verses = chapter.getValue().getVerses();
-            if (verses.indexOf(verse.getValue()) == verses.size() - 1) {
-                return;
-            }
+            final Verse curVal = verse.getValue();
             verse.increment();
+            final Verse nextVal = verse.getValue();
+            if(Objects.equals(curVal, nextVal)){
+                return ;
+            }
             model.updateVerse();
             content.setScrollTop(Double.MAX_VALUE);
         });
