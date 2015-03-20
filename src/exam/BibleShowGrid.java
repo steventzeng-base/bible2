@@ -3,12 +3,17 @@ package exam;
 import exam.model.Canon;
 import exam.model.Chapter;
 import exam.model.Verse;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -19,6 +24,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -29,6 +35,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
+import org.omg.CORBA.portable.ValueFactory;
 
 /**
  *
@@ -61,6 +68,8 @@ public class BibleShowGrid extends GridPane {
     private Button smallerFont;
 
     private Text verseShow;
+
+    final ObservableList<Verse> verses = FXCollections.observableArrayList();
 
     private final FileChooser fileChooser = new FileChooser();
 
@@ -178,20 +187,41 @@ public class BibleShowGrid extends GridPane {
                 });
             }
         };
-
-        verse = new Spinner<>();
+        verse = new Spinner<>(createSpinnerFactory());
         verse.setPrefWidth(Region.USE_COMPUTED_SIZE);
 
         goButton = new Button("顯示");
         nextVerseButton = new Button("下一節");
         saveButton = new Button("存成 Word");
-        this.add(new HBox(canon, chapter, verse, goButton, nextVerseButton, saveButton) {
+        this.add(new HBox(canon, chapter, new Label("節"), verse, goButton, nextVerseButton, saveButton) {
             {
                 setSpacing(10);
-                setAlignment(Pos.BOTTOM_LEFT);
+                setAlignment(Pos.BASELINE_LEFT);
                 setStyle("-fx-font:12pt monospace");
             }
         }, 0, 5, 2, 1);
+    }
+
+    private SpinnerValueFactory.ListSpinnerValueFactory<Verse> createSpinnerFactory() {
+        SpinnerValueFactory.ListSpinnerValueFactory<Verse> valueFactory = new SpinnerValueFactory.ListSpinnerValueFactory<>(verses);
+        valueFactory.setConverter(createStringConverter(Verse::getNum));
+        return valueFactory;
+    }
+
+    <F, Object> StringConverter<F> createStringConverter(Function<F, Object> fun) {
+        StringConverter<F> converter = new StringConverter<F>() {
+
+            @Override
+            public String toString(F input) {
+                return leafNodeStringValue(fun, input);
+            }
+
+            @Override
+            public F fromString(String string) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+        };
+        return converter;
     }
 
     <F, T> String leafNodeStringValue(Function<F, T> fun, F input) {
@@ -218,32 +248,12 @@ public class BibleShowGrid extends GridPane {
             chapter.getItems().addAll(newValue.getChapters());
         });
         chapter.valueProperty().addListener((ov, oldValue, newValue) -> {
-            final SpinnerValueFactory.ListSpinnerValueFactory<Verse> valueFactory = new SpinnerValueFactory.ListSpinnerValueFactory<>(Objects.isNull(newValue)?FXCollections.emptyObservableList():FXCollections.observableList(newValue.getVerses()));
-            valueFactory.setConverter(new StringConverter<Verse>() {
-
-                @Override
-                public String toString(Verse verse) {
-                    return Optional.ofNullable(verse).map(Verse::getNum).map(Objects::toString).orElse("");
-                }
-
-                @Override
-                public Verse fromString(String verseNum) {
-                    return chapter.getValue().getVerses().stream().filter(v -> v.getNum() == Integer.parseInt(verseNum)).findFirst().get();
-                }
-            });
-            valueFactory.setWrapAround(true);
-            verse.setValueFactory(valueFactory);
-        });
-        verse.setOnScroll(event -> {
-            if (chapter == null) {
-                return ;
-            }
-            if (event.getDeltaY() > 0) {
-                verse.increment();
-            } else {
-                verse.decrement();
+            verses.clear();
+            if (Objects.nonNull(newValue)) {
+                verses.addAll(newValue.getVerses());
             }
         });
+        verse.setOnScroll(this::mouseWheelHandler);
         goButton.setOnAction(event -> {
             model.updateVerse();
             content.setScrollTop(Double.MAX_VALUE);
@@ -268,5 +278,14 @@ public class BibleShowGrid extends GridPane {
             final Font font = content.getFont();
             content.setStyle(String.format("-fx-font-size:%d", Math.max(((int) font.getSize() - 5), 20)));
         });
+    }
+
+    private void mouseWheelHandler(ScrollEvent event) {
+        Spinner spinner = (Spinner) event.getSource();
+        if (event.getDeltaY() > 0) {
+            spinner.increment();
+        } else {
+            spinner.decrement();
+        }
     }
 }
