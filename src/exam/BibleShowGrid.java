@@ -3,17 +3,13 @@ package exam;
 import exam.model.Canon;
 import exam.model.Chapter;
 import exam.model.Verse;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -35,7 +31,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.util.StringConverter;
-import org.omg.CORBA.portable.ValueFactory;
 
 /**
  *
@@ -68,6 +63,8 @@ public class BibleShowGrid extends GridPane {
     private Button smallerFont;
 
     private Text verseShow;
+
+    final ObservableList<Verse> chapters = FXCollections.observableArrayList();
 
     final ObservableList<Verse> verses = FXCollections.observableArrayList();
 
@@ -187,13 +184,13 @@ public class BibleShowGrid extends GridPane {
                 });
             }
         };
-        verse = new Spinner<>(createSpinnerFactory());
+        verse = new Spinner<>(createSpinnerFactory(verses, Verse::getNum));
         verse.setPrefWidth(Region.USE_COMPUTED_SIZE);
 
         goButton = new Button("顯示");
         nextVerseButton = new Button("下一節");
         saveButton = new Button("存成 Word");
-        this.add(new HBox(canon, chapter, new Label("節"), verse, goButton, nextVerseButton, saveButton) {
+        this.add(new HBox(canon, chapter, new Text("節"), verse, goButton, nextVerseButton, saveButton) {
             {
                 setSpacing(10);
                 setAlignment(Pos.BASELINE_LEFT);
@@ -202,26 +199,22 @@ public class BibleShowGrid extends GridPane {
         }, 0, 5, 2, 1);
     }
 
-    private SpinnerValueFactory.ListSpinnerValueFactory<Verse> createSpinnerFactory() {
-        SpinnerValueFactory.ListSpinnerValueFactory<Verse> valueFactory = new SpinnerValueFactory.ListSpinnerValueFactory<>(verses);
-        valueFactory.setConverter(createStringConverter(Verse::getNum));
-        return valueFactory;
-    }
-
-    <F, Object> StringConverter<F> createStringConverter(Function<F, Object> fun) {
-        StringConverter<F> converter = new StringConverter<F>() {
+    private <T, L> SpinnerValueFactory.ListSpinnerValueFactory<T> createSpinnerFactory(ObservableList<T> observableList, Function<T,L> labelFunction) {
+        SpinnerValueFactory.ListSpinnerValueFactory<T> valueFactory = new SpinnerValueFactory.ListSpinnerValueFactory<>(observableList);
+        StringConverter<T> converter = new StringConverter<T>() {
 
             @Override
-            public String toString(F input) {
-                return leafNodeStringValue(fun, input);
+            public String toString(T input) {
+                return leafNodeStringValue(labelFunction, input);
             }
 
             @Override
-            public F fromString(String string) {
+            public T fromString(String string) {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
         };
-        return converter;
+        valueFactory.setConverter(converter);
+        return valueFactory;
     }
 
     <F, T> String leafNodeStringValue(Function<F, T> fun, F input) {
