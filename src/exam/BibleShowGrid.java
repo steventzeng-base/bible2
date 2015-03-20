@@ -3,16 +3,20 @@ package exam;
 import exam.model.Canon;
 import exam.model.Chapter;
 import exam.model.Verse;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.ColumnConstraints;
@@ -44,7 +48,7 @@ public class BibleShowGrid extends GridPane {
 
     private ComboBox<Chapter> chapter;
 
-    private ComboBox<Verse> verse;
+    private Spinner<Verse> verse;
 
     private Button goButton;
 
@@ -175,34 +179,8 @@ public class BibleShowGrid extends GridPane {
             }
         };
 
-        verse = new ComboBox<Verse>() {
-            {
-                setPrefWidth(Region.USE_COMPUTED_SIZE);
-                setPromptText("節");
-                setCellFactory(param -> {
-
-                    return new ListCell<Verse>() {
-                        @Override
-                        protected void updateItem(Verse item, boolean empty) {
-                            super.updateItem(item, empty);
-                            setText(leafNodeStringValue(Verse::getNum, item));
-                        }
-                    };
-                });
-                setConverter(new StringConverter<Verse>() {
-
-                    @Override
-                    public String toString(Verse verse) {
-                        return String.valueOf(verse.getNum());
-                    }
-
-                    @Override
-                    public Verse fromString(String value) {
-                        return chapter.getValue().getVerses().get(Integer.parseInt(value) - 1);
-                    }
-                });
-            }
-        };
+        verse = new Spinner<>();
+        verse.setPrefWidth(Region.USE_COMPUTED_SIZE);
 
         goButton = new Button("顯示");
         nextVerseButton = new Button("下一節");
@@ -234,28 +212,50 @@ public class BibleShowGrid extends GridPane {
         verseShow.textProperty().bind(model.verseDescriptionProperty());
         goButton.disableProperty().bind(verse.valueProperty().isNull());
         nextVerseButton.disableProperty().bind(verse.valueProperty().isNull());
-        verse.itemsProperty();
         canon.valueProperty().addListener((ObservableValue<? extends Canon> observable, Canon oldValue, Canon newValue) -> {
             chapter.setValue(null);
             chapter.getItems().clear();
             chapter.getItems().addAll(newValue.getChapters());
         });
         chapter.valueProperty().addListener((ov, oldValue, newValue) -> {
-            verse.setValue(null);
-            verse.getItems().clear();
-            Optional.ofNullable(newValue).map(Chapter::getVerses).ifPresent(verse.getItems()::addAll);
+            final SpinnerValueFactory.ListSpinnerValueFactory<Verse> valueFactory = new SpinnerValueFactory.ListSpinnerValueFactory<>(Objects.isNull(newValue)?FXCollections.emptyObservableList():FXCollections.observableList(newValue.getVerses()));
+            valueFactory.setConverter(new StringConverter<Verse>() {
+
+                @Override
+                public String toString(Verse verse) {
+                    return Optional.ofNullable(verse).map(Verse::getNum).map(Objects::toString).orElse("");
+                }
+
+                @Override
+                public Verse fromString(String verseNum) {
+                    return chapter.getValue().getVerses().stream().filter(v -> v.getNum() == Integer.parseInt(verseNum)).findFirst().get();
+                }
+            });
+            valueFactory.setWrapAround(true);
+            verse.setValueFactory(valueFactory);
+        });
+        verse.setOnScroll(event -> {
+            if (chapter == null) {
+                return ;
+            }
+            if (event.getDeltaY() > 0) {
+                verse.increment();
+            } else {
+                verse.decrement();
+            }
         });
         goButton.setOnAction(event -> {
             model.updateVerse();
             content.setScrollTop(Double.MAX_VALUE);
         });
         nextVerseButton.setOnAction(event -> {
-            final int nextIndex;
-            if ((nextIndex = verse.getItems().indexOf(verse.getValue()) + 1) < verse.getItems().size()) {
-                verse.setValue(verse.getItems().get(nextIndex));
-                model.updateVerse();
-                content.setScrollTop(Double.MAX_VALUE);
+            final List<Verse> verses = chapter.getValue().getVerses();
+            if (verses.indexOf(verse.getValue()) == verses.size() - 1) {
+                return;
             }
+            verse.increment();
+            model.updateVerse();
+            content.setScrollTop(Double.MAX_VALUE);
         });
         saveButton.setOnAction(event -> {
             model.saveFile(this.getScene().getWindow(), fileChooser);
