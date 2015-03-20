@@ -9,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -25,11 +24,7 @@ public class BibleLoader {
 
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
-    private final List<Canon> canos = new ArrayList<>();
-
-    private Canon curCanon;
-
-    private Chapter curChapter;
+    private final List<Canon> canons = new ArrayList<>();
 
     private final Pattern delimiter = Pattern.compile("\\|");
 
@@ -53,27 +48,26 @@ public class BibleLoader {
     }
 
     private void buildBibileData(String canonName, String canonShortName, int chapterNum, int verseNum, int pageNum, String text) {
-        curCanon = Optional.ofNullable(curCanon).filter(c -> c.getShortName().equals(canonShortName))
-                .orElseGet(() -> newCanon(canonName, canonShortName));
-        curChapter = Optional.ofNullable(curChapter).filter(ch -> ch.getNum() == chapterNum)
-                .orElseGet(() -> newChapter(chapterNum));
+        final Canon curCanon = canons.stream().filter(c -> c.getShortName().equals(canonShortName))
+                .findFirst().orElseGet(() -> newCanon(canonName, canonShortName));
+        final Chapter curChapter = curCanon.getChapters().stream().filter(ch -> ch.getNum() == chapterNum)
+                .findFirst().orElseGet(() -> newChapter(curCanon, chapterNum));
         curChapter.getVerses().add(new Verse(curChapter, verseNum, text, pageNum));
-
     }
 
     private Canon newCanon(final String canonName, final String canonShortName) {
         final Canon canon = new Canon(canonName, canonShortName);
-        canos.add(canon);
+        canons.add(canon);
         return canon;
     }
 
-    private Chapter newChapter(int chapterNum) {
-        final Chapter chapter = new Chapter(curCanon, chapterNum);
-        curCanon.getChapters().add(chapter);
+    private Chapter newChapter(Canon canon, int chapterNum) {
+        final Chapter chapter = new Chapter(canon, chapterNum);
+        canon.getChapters().add(chapter);
         return chapter;
     }
 
     public List<Canon> getBible() {
-        return Collections.unmodifiableList(canos);
+        return Collections.unmodifiableList(canons);
     }
 }

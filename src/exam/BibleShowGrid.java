@@ -1,11 +1,12 @@
 package exam;
 
+import exam.model.Bible;
 import exam.model.Canon;
 import exam.model.Chapter;
 import exam.model.Verse;
+import exam.utils.UIHelper;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -15,10 +16,8 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -28,7 +27,6 @@ import javafx.scene.layout.RowConstraints;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-import javafx.util.StringConverter;
 
 /**
  *
@@ -128,7 +126,9 @@ public class BibleShowGrid extends GridPane {
         canon = new ComboBox<Canon>() {
             {
                 setPromptText("經卷");
-                getItems().addAll(model.getBible().getAllCanons());
+                final Bible bible = new Bible();
+                bible.init();
+                getItems().addAll(bible.getAllCanons());
                 setCellFactory(param -> {
                     return new ListCell<Canon>() {
 
@@ -139,14 +139,14 @@ public class BibleShowGrid extends GridPane {
                         }
                     };
                 });
-                setConverter(createStringConverter(Canon::getName));
+                setConverter(UIHelper.createStringConverter(Canon::getName));
             }
         };
 
-        chapter = new Spinner<>(createSpinnerFactory(chapters, Chapter::getNum));
+        chapter = new Spinner<>(UIHelper.createSpinnerFactory(chapters, Chapter::getNum));
         chapter.setPrefWidth(USE_COMPUTED_SIZE);
 
-        verse = new Spinner<>(createSpinnerFactory(verses, Verse::getNum));
+        verse = new Spinner<>(UIHelper.createSpinnerFactory(verses, Verse::getNum));
         verse.setPrefWidth(USE_COMPUTED_SIZE);
 
         goButton = new Button("顯示");
@@ -159,28 +159,6 @@ public class BibleShowGrid extends GridPane {
                 setStyle("-fx-font:12pt monospace");
             }
         }, 0, 5, 2, 1);
-    }
-
-    private <T> SpinnerValueFactory.ListSpinnerValueFactory<T> createSpinnerFactory(ObservableList<T> observableList, Function<T, Object> showLabelFuntion) {
-        SpinnerValueFactory.ListSpinnerValueFactory<T> valueFactory = new SpinnerValueFactory.ListSpinnerValueFactory<>(observableList);
-        valueFactory.setConverter(createStringConverter(showLabelFuntion));
-        return valueFactory;
-    }
-    
-    private <T> StringConverter<T> createStringConverter(Function<T, Object> showLabelFuntion){
-        StringConverter<T> converter = new StringConverter<T>() {
-
-            @Override
-            public String toString(T input) {
-                return Optional.ofNullable(input).map(showLabelFuntion).map(Objects::toString).orElse("");
-            }
-
-            @Override
-            public T fromString(String string) {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-        };
-        return converter;
     }
 
     protected void binding() {
@@ -209,8 +187,8 @@ public class BibleShowGrid extends GridPane {
                 verses.addAll(newValue.getVerses());
             }
         });
-        chapter.setOnScroll(this::mouseWheelHandler);
-        verse.setOnScroll(this::mouseWheelHandler);
+        chapter.setOnScroll(UIHelper::mouseWheelHandler);
+        verse.setOnScroll(UIHelper::mouseWheelHandler);
         goButton.setOnAction(event -> {
             model.updateVerse();
             content.setScrollTop(Double.MAX_VALUE);
@@ -219,8 +197,8 @@ public class BibleShowGrid extends GridPane {
             final Verse curVal = verse.getValue();
             verse.increment();
             final Verse nextVal = verse.getValue();
-            if(Objects.equals(curVal, nextVal)){
-                return ;
+            if (Objects.equals(curVal, nextVal)) {
+                return;
             }
             model.updateVerse();
             content.setScrollTop(Double.MAX_VALUE);
@@ -236,14 +214,5 @@ public class BibleShowGrid extends GridPane {
             final Font font = content.getFont();
             content.setStyle(String.format("-fx-font-size:%d", Math.max(((int) font.getSize() - 5), 20)));
         });
-    }
-
-    private void mouseWheelHandler(ScrollEvent event) {
-        Spinner spinner = (Spinner) event.getSource();
-        if (event.getDeltaY() > 0) {
-            spinner.increment();
-        } else {
-            spinner.decrement();
-        }
     }
 }

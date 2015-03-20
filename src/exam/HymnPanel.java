@@ -1,17 +1,17 @@
 package exam;
 
+import exam.utils.UIHelper;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.ComboBox;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory.ListSpinnerValueFactory;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -28,11 +28,13 @@ public class HymnPanel extends VBox {
 
     private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
+    private Spinner<String> p1;
 
     private Spinner<String> p2;
 
-    private ComboBox<String> p1;
+    private final ObservableList<String> hymns = FXCollections.observableArrayList();
 
+    private final ObservableList<String> section = FXCollections.observableArrayList();
 
     private TextArea textArea;
 
@@ -50,27 +52,32 @@ public class HymnPanel extends VBox {
         textArea.setStyle("-fx-font:40pt monospace; -fx-font-smoothing-type:lcd; -fx-background-color: black;");
         textArea.setText(" ");
         VBox.setVgrow(textArea, Priority.ALWAYS);
+        p1 = new Spinner<>(UIHelper.createSpinnerFactory(hymns, Objects::toString));
+        p1.setPrefWidth(USE_COMPUTED_SIZE);
         final HymnLoader hymnLoader = new HymnLoader();
         hymnLoader.init();
-        p1 = new ComboBox<String>(){
-            {
-                getItems().addAll(hymnLoader.getHymns());
-                setPromptText("詩");
+        hymns.addAll(hymnLoader.getHymns());
+        p1.valueProperty().addListener((observable, oldValue, newValue) -> {
+            section.clear();
+            if (Objects.nonNull(newValue)) {
+                section.addAll(IntStream.rangeClosed(1, hymnLoader.getCount(newValue)).mapToObj(Objects::toString).collect(toList()));
             }
-        };
-        p1.valueProperty().addListener((ObservableValue<? extends String> observable, String oldValue, String newValue) -> {
-            final ObservableList<String> spinList = FXCollections.observableArrayList(IntStream.rangeClosed(1, hymnLoader.getCount(newValue)).mapToObj(Objects::toString).collect(toList()));
-            p2.setValueFactory(new ListSpinnerValueFactory<>(spinList));
         });
-        p2 = new Spinner<>();
-        p2.valueProperty().addListener((ObservableValue<? extends Object> observable, Object oldValue, Object newValue) -> {
+        p1.setOnScroll(UIHelper::mouseWheelHandler);
+        
+        p2 = new Spinner<>(UIHelper.createSpinnerFactory(section, Objects::toString));
+        p2.setPrefWidth(USE_COMPUTED_SIZE);
+        p2.valueProperty().addListener((observable, oldValue, newValue) -> {
             title.setText(String.format("詩 %s 首", p1.getValue()));
             if (Objects.nonNull(p2.getValue()) && !p2.getValue().isEmpty() && !Objects.isNull(p1.getValue()) && !p1.getValue().isEmpty()) {
                 loadHymn();
             }
         });
-        final HBox controlBar = new HBox(p1, p2);
-        controlBar.setPrefHeight(USE_COMPUTED_SIZE);
+        p2.setOnScroll(UIHelper::mouseWheelHandler);
+        final HBox controlBar = new HBox(new Text("詩"), p1, new Text("節"), p2);
+        controlBar.setAlignment(Pos.BASELINE_LEFT);
+        controlBar.setSpacing(10);
+        controlBar.setPadding(new Insets(5));
         this.getChildren().addAll(title, textArea, controlBar);
     }
 

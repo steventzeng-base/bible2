@@ -5,7 +5,6 @@
  */
 package exam;
 
-import exam.model.Bible;
 import exam.model.Canon;
 import exam.model.Chapter;
 import exam.model.DocGender;
@@ -27,8 +26,6 @@ import javafx.stage.Window;
  */
 public class BibleShowModel {
 
-    private final Bible bible;
-
     private final StringProperty titlepProperty = new SimpleStringProperty();
 
     private final StringProperty speakerProperty = new SimpleStringProperty();
@@ -44,11 +41,6 @@ public class BibleShowModel {
     private final SimpleObjectProperty<Verse> verse = new SimpleObjectProperty<>();
 
     private final StringProperty verseDescription = new SimpleStringProperty();
-
-    public BibleShowModel() {
-        bible = new Bible();
-        bible.init();
-    }
 
     public StringProperty titlepProperty() {
         return titlepProperty;
@@ -81,11 +73,7 @@ public class BibleShowModel {
     public StringProperty verseDescriptionProperty() {
         return verseDescription;
     }
-
-    public Bible getBible() {
-        return bible;
-    }
-
+    
     public void updateVerse() {
         Optional.ofNullable(verse).ifPresent(v->{
             Verse data = v.get();
