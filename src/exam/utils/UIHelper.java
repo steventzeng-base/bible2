@@ -19,11 +19,15 @@ public class UIHelper {
     }
 
     public static void mouseWheelHandler(ScrollEvent event) {
+        mouseWheelHandler(event, 1);
+    }
+    
+    public static void mouseWheelHandler(ScrollEvent event, int step) {
         Spinner spinner = (Spinner) event.getSource();
         if (event.getDeltaY() > 0) {
-            spinner.increment();
+            spinner.increment(step);
         } else {
-            spinner.decrement();
+            spinner.decrement(step);
         }
     }
 
