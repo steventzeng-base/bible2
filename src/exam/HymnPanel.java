@@ -45,11 +45,11 @@ public class HymnPanel extends VBox {
     private void render() {
         setPrefHeight(USE_COMPUTED_SIZE);
         Text title = new Text();
-        title.setStyle("-fx-font:40pt monospace; -fx-font-smoothing-type: lcd; -fx-font-family:'Source Han Sans Heavy';");
+        title.getStyleClass().add("hymnTitle");
         textArea = new TextArea();
         textArea.setEditable(false);
         textArea.setWrapText(true);
-        textArea.setStyle("-fx-font:40pt monospace; -fx-font-smoothing-type:lcd; -fx-background-color: black;");
+        textArea.getStyleClass().add("kanban");
         textArea.setText(" ");
         VBox.setVgrow(textArea, Priority.ALWAYS);
         p1 = new Spinner<>(UIHelper.createSpinnerFactory(hymns, Objects::toString));
@@ -63,7 +63,7 @@ public class HymnPanel extends VBox {
                 section.addAll(IntStream.rangeClosed(1, hymnLoader.getCount(newValue)).mapToObj(Objects::toString).collect(toList()));
             }
         });
-        p1.setOnScroll(UIHelper::mouseWheelHandler);
+        p1.setOnScroll(event -> UIHelper.mouseWheelHandler(event, 5));
         
         p2 = new Spinner<>(UIHelper.createSpinnerFactory(section, Objects::toString));
         p2.setPrefWidth(USE_COMPUTED_SIZE);
@@ -84,7 +84,7 @@ public class HymnPanel extends VBox {
     private void loadHymn() {
         final String url = String.format("/hymn/H%s-%s.txt", p1.getValue(), p2.getValue());
         try {
-            final String hymn = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream(url), StandardCharsets.UTF_8)).lines().collect(joining());
+            final String hymn = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream(url), StandardCharsets.UTF_8)).lines().collect(joining("\n"));
             textArea.setText(hymn);
         } catch (Exception e) {
             logger.warning(e.getMessage());

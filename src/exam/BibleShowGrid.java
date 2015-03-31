@@ -80,7 +80,7 @@ public class BibleShowGrid extends GridPane {
         };
         final RowConstraints commonRowConstraints = new RowConstraints() {
             {
-                setMinHeight(20);
+                setMinHeight(38);
             }
         };
         final RowConstraints contentRowConstraints = new RowConstraints() {
@@ -89,22 +89,46 @@ public class BibleShowGrid extends GridPane {
                 setVgrow(Priority.ALWAYS);
             }
         };
-        this.setStyle("-fx-font:20px monospace; -fx-font-smoothing-type:lcd;");
+        this.getStyleClass().add("ui");
         this.getColumnConstraints().addAll(columnConstraints, columnConstraints);
-        this.getRowConstraints().addAll(commonRowConstraints, commonRowConstraints, commonRowConstraints, contentRowConstraints, commonRowConstraints, commonRowConstraints);
+        this.getRowConstraints().addAll(commonRowConstraints, commonRowConstraints, commonRowConstraints, contentRowConstraints, new RowConstraints(20), new RowConstraints(20));
         this.setHgap(5);
         this.setVgap(5);
         this.setPadding(new Insets(5));
-        title = new Text("title");
-        hymnal = new Text("hymnal");
-        speaker = new Text("speaker");
+        title = new Text("title") {
+            {
+                getStyleClass().add("title");
+            }
+        };
+        hymnal = new Text("hymnal") {
+            {
+                getStyleClass().add("title");
+            }
+        };
+        speaker = new Text("speaker") {
+            {
+                getStyleClass().add("title");
+            }
+        };
         content = new TextArea();
         content.setWrapText(true);
-
+        content.getStyleClass().add("kanban");
         this.add(title, 0, 0, 2, 1);
-        this.add(new HBox(new Label("主領："), speaker), 0, 1);
-        this.add(new HBox(new Label("詩歌："), hymnal), 1, 1);
-        verseShow = new Text();
+        this.add(new HBox(new Label("主領："), speaker) {
+            {
+                getStyleClass().add("title");
+            }
+        }, 0, 1);
+        this.add(new HBox(new Label("詩歌："), hymnal) {
+            {
+                getStyleClass().add("title");
+            }
+        }, 1, 1);
+        verseShow = new Text() {
+            {
+                getStyleClass().add("title");
+            }
+        };
         this.add(new HBox(verseShow), 0, 2, 2, 1);
         this.add(content, 0, 3, 2, 1);
         titleField = new TextField();
@@ -120,7 +144,6 @@ public class BibleShowGrid extends GridPane {
             {
                 setSpacing(10);
                 setPrefHeight(10);
-                setStyle("-fx-font:12px monospace; -fx-font-smoothing-type:lcd;");
             }
         }, 0, 4, 2, 1);
         canon = new ComboBox<Canon>() {
@@ -156,7 +179,6 @@ public class BibleShowGrid extends GridPane {
             {
                 setSpacing(10);
                 setAlignment(Pos.BASELINE_LEFT);
-                setStyle("-fx-font:12pt monospace");
             }
         }, 0, 5, 2, 1);
     }

@@ -32,6 +32,7 @@ public class App extends Application {
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabPane.setSide(Side.BOTTOM);
         final Scene scene = new Scene(tabPane, 1024, 768, false, SceneAntialiasing.BALANCED);
+        scene.getStylesheets().add(this.getClass().getResource("/default.css").toExternalForm());
         tabPane.prefHeightProperty().bind(scene.heightProperty());
         tabPane.prefWidthProperty().bind(scene.widthProperty());
         stage.setScene(scene);

@@ -1,0 +1,26 @@
+.ui {
+    -fx-font-size:12;
+    -fx-font-family: 'droid sans';
+}
+.kanban {
+    -fx-font-family: 'droid sans';
+    -fx-font-size:50;
+    -fx-text-fill: white;
+    -fx-font-smoothing-type:lcd;
+}
+
+.kanban .scroll-pane{
+    -fx-font-size:10;
+}
+
+.kanban .content{
+    -fx-background-color: black;
+}
+.title{
+    -fx-font-family:'droid sans';
+    -fx-font-size:40;
+}
+.hymnTitle{
+    -fx-font-family:'droid sans';
+    -fx-font-size:40;
+}
