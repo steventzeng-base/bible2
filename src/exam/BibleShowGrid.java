@@ -150,17 +150,18 @@ public class BibleShowGrid extends GridPane {
             {
                 setPromptText("經卷");
                 final Bible bible = new Bible();
-                bible.init();
-                getItems().addAll(bible.getAllCanons());
-                setCellFactory(param -> {
-                    return new ListCell<Canon>() {
+                bible.init().thenRun(() -> {
+                    getItems().addAll(bible.getAllCanons());
+                    setCellFactory(param -> {
+                        return new ListCell<Canon>() {
 
-                        @Override
-                        protected void updateItem(Canon item, boolean empty) {
-                            super.updateItem(item, empty);
-                            setText(Optional.ofNullable(item).map(Canon::getName).orElse(""));
-                        }
-                    };
+                            @Override
+                            protected void updateItem(Canon item, boolean empty) {
+                                super.updateItem(item, empty);
+                                setText(Optional.ofNullable(item).map(Canon::getName).orElse(""));
+                            }
+                        };
+                    });
                 });
                 setConverter(UIHelper.createStringConverter(Canon::getName));
             }

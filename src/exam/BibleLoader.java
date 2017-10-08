@@ -1,5 +1,6 @@
 package exam;
 
+import exam.model.BibleLine;
 import exam.model.Canon;
 import exam.model.Chapter;
 import exam.model.Verse;
@@ -10,10 +11,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 
 /**
@@ -22,21 +25,26 @@ import javax.annotation.PostConstruct;
  */
 public class BibleLoader {
 
-    private static final Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+    private static final Logger LOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 
     private final List<Canon> canons = new ArrayList<>();
 
     private final Pattern delimiter = Pattern.compile("\\|");
 
     @PostConstruct
-    public void init() {
-        final long start = System.nanoTime();
-        final InputStreamReader reader = new InputStreamReader(BibleLoader.class.getResourceAsStream("/holy_bible.txt"), StandardCharsets.UTF_8);
-        new BufferedReader(reader).lines().onClose(() -> logger.info("file is close")).forEach(this::parseLine);
-        logger.log(Level.INFO, "total load time = {0}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
+    public CompletableFuture<Void> init() {
+        CompletableFuture<Void> completableFuture = CompletableFuture.runAsync(() -> {
+            final long start = System.nanoTime();
+            final InputStreamReader reader = new InputStreamReader(BibleLoader.class.getResourceAsStream("/holy_bible.txt"), StandardCharsets.UTF_8);
+            try (Stream<String> lines = new BufferedReader(reader).lines()) {
+                lines.onClose(() -> LOGGER.info("file is close")).map(this::parseLine).forEach(this::buildBibileData);
+            }
+            LOGGER.log(Level.INFO, "total load time = {0}", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
+        });
+        return completableFuture;
     }
 
-    protected void parseLine(final String line) {
+    protected BibleLine parseLine(final String line) {
         final Scanner scanner = new Scanner(line).useDelimiter(delimiter);
         String canonName = scanner.next();
         String canonShortName = scanner.next();
@@ -44,15 +52,15 @@ public class BibleLoader {
         int verseNum = scanner.nextInt();
         int pageNum = scanner.nextInt();
         String text = scanner.next();
-        buildBibileData(canonName, canonShortName, chapterNum, verseNum, pageNum, text);
+        return new BibleLine(canonName, canonShortName, chapterNum, verseNum, pageNum, text);
     }
 
-    private void buildBibileData(String canonName, String canonShortName, int chapterNum, int verseNum, int pageNum, String text) {
-        final Canon curCanon = canons.stream().filter(c -> c.getShortName().equals(canonShortName))
-                .findFirst().orElseGet(() -> newCanon(canonName, canonShortName));
-        final Chapter curChapter = curCanon.getChapters().stream().filter(ch -> ch.getNum() == chapterNum)
-                .findFirst().orElseGet(() -> newChapter(curCanon, chapterNum));
-        curChapter.getVerses().add(new Verse(curChapter, verseNum, text, pageNum));
+    private void buildBibileData(BibleLine line) {
+        final Canon curCanon = canons.stream().filter(c -> c.getShortName().equals(line.getCanonShortName()))
+                .findFirst().orElseGet(() -> newCanon(line.getCanonName(), line.getCanonShortName()));
+        final Chapter curChapter = curCanon.getChapters().stream().filter(ch -> ch.getNum() == line.getChapterNum())
+                .findFirst().orElseGet(() -> newChapter(curCanon, line.getChapterNum()));
+        curChapter.getVerses().add(new Verse(curChapter, line.getVerseNum(), line.getText(), line.getPageNum()));
     }
 
     private Canon newCanon(final String canonName, final String canonShortName) {

@@ -4,6 +4,7 @@ import exam.BibleLoader;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  *
@@ -13,18 +14,18 @@ public class Bible {
 
     private BibleLoader loader;
 
-    public void init() {
+    public CompletableFuture<Void> init() {
         loader = new BibleLoader();
-        loader.init();
+        return loader.init();
     }
-    
+
     public String fetchVerbe(String canonShortName, int chapterNum, int verseNum) {
 
         return getCanon(canonShortName)
                 .map(Canon::getChapters)
-                .map(chapters -> chapters.get(chapterNum -1))
+                .map(chapters -> chapters.get(chapterNum - 1))
                 .map(Chapter::getVerses)
-                .map(verses -> verses.get(verseNum -1))
+                .map(verses -> verses.get(verseNum - 1))
                 .map(Verse::getText).orElse("");
     }
 
