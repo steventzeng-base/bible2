@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package exam.model;
 
 import java.io.File;
@@ -31,7 +26,7 @@ public class DocGender {
     private String speaker;
 
     private String content;
-    
+
     private String hymnal;
 
     private File outoutFile;
@@ -55,7 +50,7 @@ public class DocGender {
     public void setHymnal(String hymnal) {
         this.hymnal = hymnal;
     }
-    
+
     public void generate() {
         XWPFDocument document = new XWPFDocument();
         XWPFParagraph paragraph = document.createParagraph();
